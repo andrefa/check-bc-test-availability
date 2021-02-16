@@ -1,6 +1,5 @@
-const fetch = require('node-fetch');
-const play = require('play');
-const { differenceInCalendarDays, parse } = require('date-fns')
+
+const { daysFromToday, fetch, playAlarm } = require('./common')
 
 const servicePublicId = 'da8488da9b5df26d32ca58c6d6a7973bedd5d98ad052d62b468d3b04b080ea25';
 
@@ -8,7 +7,7 @@ const URLS = {
   base: 'https://onlinebusiness.icbc.com/qmaticwebbooking/rest/schedule/branches',
   availablePlaces: () => `${URLS.base}/available;servicePublicId=${servicePublicId}`,
   availableDays: (addressId) => `${URLS.base}/${addressId}/dates;servicePublicId=${servicePublicId};customSlotLength=15`,
-  availableTimes:  (addressId, date) => `${URLS.base}/${addressId}/dates/${date}/times;servicePublicId=${servicePublicId};customSlotLength=15`
+  availableTimes: (addressId, date) => `${URLS.base}/${addressId}/dates/${date}/times;servicePublicId=${servicePublicId};customSlotLength=15`
 }
 
 const INTERESTING_ADDRESSES = [
@@ -27,61 +26,23 @@ const INTERESTING_ADDRESSES = [
 ];
 
 async function run() {
-  const addresses = INTERESTING_ADDRESSES; //await get(URLS.availablePlaces());
+  const addresses = INTERESTING_ADDRESSES;
   const availability = [];
   for (const address of addresses) {
-    const availableDays = await get(URLS.availableDays(address.id));
-    const closeAvailableDays = availableDays.map(obj => obj.date).filter(d => daysFromToday(d) < 7);
+    const availableDays = await fetch({ url: URLS.availableDays(address.id), method: "GET" });
+    const closeAvailableDays = availableDays.map(obj => obj.date).filter(d => daysFromToday(d) < 14);
 
     if(closeAvailableDays.length) {
-      play.sound('alarm.wav');
+      playAlarm();
     }
     availability.push({
       where: address.name,
       when: closeAvailableDays[0] || null,
-      also: closeAvailableDays.slice(1,999),
+      also: closeAvailableDays.slice(1,closeAvailableDays.length+1),
     });
   }
 
-  //availability.filter(a => a.when).sort((a, b) => a.when.localeCompare(b.when));
   console.log('Availability:', availability);
-}
-
-// async function run() {
-//   const addresses = await get(URLS.availablePlaces());
-//   const availability = [];
-//   for (const address of addresses) {
-//     const availableDays = await get(URLS.availableDays(address.id));
-//     const closeAvailableDays = availableDays.map(obj => obj.date).filter(d => daysFromToday(d) < 7);
-//     if (closeAvailableDays.length === 0) {
-//       console.log(`Non available days for ${address.name} this week.`);
-//     } else {
-//       const firstAvailableDay = closeAvailableDays[0];
-//       //const availableTimes = await get(URLS.availableTimes(address.id, firstAvailableDay.date));
-
-//       availability.push({
-//         where: address.name,
-//         when: firstAvailableDay,
-//         also: closeAvailableDays,
-//         //times: availableTimes.map(obj => obj.time)
-//       });
-//     }
-//   }
-
-//   availability.sort((a, b) => a.when.localeCompare(b.when));
-//   console.log('Availability:', availability);
-// }
-
-async function get(url) {
-  const res = await fetch(url);
-  return await res.json();
-}
-
-function daysFromToday(date) {
-  const parsed = parse(date, 'yyyy-MM-dd', new Date());
-  const diff = differenceInCalendarDays(parsed, new Date());
-
-  return diff;
 }
 
 run();
