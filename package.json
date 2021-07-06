@@ -1,6 +1,6 @@
 {
   "name": "check-bc-test-availability",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "check-bc-test-availability.js",
   "dependencies": {
