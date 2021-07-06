@@ -3,6 +3,7 @@ const { differenceInCalendarDays, format, parse, startOfTomorrow } = require('da
 const { exec } = require("child_process");
 
 function daysFromToday(date) {
+  console.log(date);
   const parsed = parse(date, 'yyyy-MM-dd', new Date());
   const diff = differenceInCalendarDays(parsed, new Date());
 
